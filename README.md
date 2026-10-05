@@ -23,7 +23,6 @@ Run the command from the project root. A Python installation with OpenGL 3.3 sup
 - **Mouse** — look around
 - **Left click** — remove a voxel
 - **Right click** — switch between remove and add mode
-- **Esc** — quit
 
 ## Highlights
 
