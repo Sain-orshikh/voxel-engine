@@ -136,7 +136,7 @@ def build_chunk_mesh(chunk_voxels, format_size, chunk_pos, world_voxels):
 
                     v0 = pack_data(x, y, z, voxel_id, 1, ao[0], flip_id)
                     v1 = pack_data(x+1, y, z, voxel_id, 1, ao[1], flip_id)
-                    v2 = pack_data(x+1, y+1, z, voxel_id, 1, ao[2], flip_id)
+                    v2 = pack_data(x+1, y, z+1, voxel_id, 1, ao[2], flip_id)
                     v3 = pack_data(x, y, z+1, voxel_id, 1, ao[3], flip_id)
 
                     if flip_id:
