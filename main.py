@@ -5,6 +5,7 @@ import sys
 from shader_program import ShaderProgram
 from scene import Scene
 from player import Player
+from textures import Textures
 
 
 class VoxelEngine:
@@ -33,6 +34,7 @@ class VoxelEngine:
 
     def on_init(self):
         self.player = Player(self)
+        self.textures = Textures(self)
         self.shader_program = ShaderProgram(self)
         self.scene = Scene(self)
 
