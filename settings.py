@@ -2,6 +2,15 @@ from numba import njit
 import numpy as np
 import glm
 import math
+from pathlib import Path
+import sys
+
+
+RESOURCE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+
+
+def resource_path(*parts):
+	return RESOURCE_DIR.joinpath(*parts)
 
 #resolution
 WIN_RES = glm.vec2(1600, 900)

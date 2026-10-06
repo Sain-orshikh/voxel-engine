@@ -1,0 +1,40 @@
+name: Build Windows game
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt pyinstaller
+
+      - name: Build executable
+        run: >-
+          pyinstaller --clean --noconfirm --onedir --windowed
+          --name VoxelEngine
+          --add-data "assets;assets"
+          --add-data "shaders;shaders"
+          main.py
+
+      - name: Create itch.io archive
+        run: Compress-Archive -Path dist/VoxelEngine -DestinationPath dist/VoxelEngine-windows.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxelEngine-windows
+          path: dist/VoxelEngine-windows.zip

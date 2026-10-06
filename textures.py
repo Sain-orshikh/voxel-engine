@@ -17,7 +17,7 @@ class Textures:
         self.texture_1.use(location=2)
 
     def load(self, file_name, is_texture_array=False):
-        texture = pg.image.load(f'assets/{file_name}')
+        texture = pg.image.load(resource_path('assets', file_name))
         texture = pg.transform.flip(texture, flip_x=True, flip_y=False)
         if is_texture_array:
             num_layers = 3 * texture.get_height() // texture.get_width() #3textures per layer
