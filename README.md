@@ -15,6 +15,13 @@ python main.py
 
 Run the command from the project root. A Python installation with OpenGL 3.3 support is recommended.
 
+## Windows installer
+
+The Windows build also creates a single setup executable with a Start Menu
+shortcut, optional desktop shortcut, and uninstaller. See
+[building and publishing the installer](docs/windows-distribution.md) for GitHub
+Actions and local Windows instructions.
+
 ## Controls
 
 - **W / S** — move forward / backward
