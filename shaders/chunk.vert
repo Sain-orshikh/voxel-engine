@@ -26,18 +26,6 @@ const float face_shading[6] = float[6](
     0.5, 0.8 //front back
 );
 
-const vec2 uv_coords[4] = vec2[4](
-    vec2(0, 0), vec2(0, 1),
-    vec2(1, 0), vec2(1, 1)
-);
-
-const int uv_indices[24] = int[24](
-    1, 0, 2, 1, 2, 3, //tex coords indexes for vertices of an even face
-    3, 0, 2, 3, 1, 0, //odd faces
-    3, 1, 0, 3, 0, 2, //flipped even face
-    1, 2, 3, 1, 0, 2 //flipped odd face
-);
-
 vec3 hash31(float p) {
     vec3 p3 = fract(vec3(p * 21.2) * vec3(0.1031, 0.1030, 0.0973));
     p3 += dot(p3, p3.yxz + 33.33);
@@ -69,8 +57,13 @@ void main() {
     unpack(packed_data);
 
     vec3 in_position = vec3(x, y, z);
-    int uv_index = gl_VertexID % 6 + ((face_id & 1) + flip_id * 2) * 6;
-    uv = uv_coords[uv_indices[uv_index]];
+    // Match the old face orientation, with one texture repeat per voxel.
+    if (face_id == 0) uv = vec2(x, -z);
+    else if (face_id == 1) uv = vec2(-x, -z);
+    else if (face_id == 2) uv = vec2(z, -y);
+    else if (face_id == 3) uv = vec2(-z, -y);
+    else if (face_id == 4) uv = vec2(x, -y);
+    else uv = vec2(-x, -y);
     voxel_color = hash31(voxel_id);
     shading = face_shading[face_id] * ao_values[ao_id];
     frag_world_pos = (m_model * vec4(in_position, 1.0)).xyz;

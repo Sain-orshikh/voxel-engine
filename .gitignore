@@ -2,3 +2,4 @@
 /venv
 *.nbc
 *.nbi
+/benchmarks

@@ -1,5 +1,5 @@
 from meshes.base_mesh import BaseMesh
-from meshes.chunk_mesh_builder import build_chunk_mesh
+from meshes.binary_greedy_mesh_builder import build_chunk_mesh
 
 class ChunkMesh(BaseMesh):
     def __init__(self, chunk):
@@ -15,7 +15,10 @@ class ChunkMesh(BaseMesh):
         self.vao = self.get_vao()
 
     def rebuild(self):
+        old_vao, old_vbo = self.vao, self.vbo
         self.vao = self.get_vao()
+        old_vao.release()
+        old_vbo.release()
 
     def get_vertex_data(self):
         mesh = build_chunk_mesh(

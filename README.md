@@ -29,13 +29,19 @@ Run the command from the project root. A Python installation with OpenGL 3.3 sup
 - Chunk-based voxel world with procedural terrain, caves, trees, water, and clouds.
 - Frustum culling skips chunks outside the camera view.
 - Numba-compiled terrain and mesh generation speeds up CPU-heavy work.
-- Visible-face meshing avoids generating hidden cube faces.
+- Binary greedy meshing combines compatible visible faces while preserving materials and ambient occlusion.
 - Ambient occlusion adds depth to voxel corners.
 - Vertex data is packed into a single `uint32`, storing position, voxel, face, AO, and triangle-flip data efficiently.
 - Shared NumPy voxel storage keeps chunk data compact and fast to access.
 - OpenGL depth testing, face culling, texture arrays, mipmaps, and nearest-neighbor filtering improve rendering performance while keeping the pixel-art look.
 
 ## Tech
+
+See [the file-by-file meshing integration guide](docs/meshing-integration.md) for the
+world, mesh, shader, and editing data flow.
+
+For repeatable CPU meshing timings and binary greedy meshing integration notes,
+see [the meshing benchmark](benchmarks/README.md).
 
 - Python
 - GLSL

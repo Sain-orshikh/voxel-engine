@@ -18,8 +18,9 @@ in float shading;
 in vec3 frag_world_pos;
 
 void main() {
-    vec2 face_uv = uv;
-    face_uv.x = uv.x / 3.0 - min(face_id, 2) / 3.0;
+    // Repeat inside the selected third of the material strip.
+    vec2 face_uv = fract(uv);
+    face_uv.x = (face_uv.x + float((3 - min(face_id, 2)) % 3)) / 3.0;
 
     vec3 tex_col = texture(u_texture_array_0, vec3(face_uv, voxel_id)).rgb;
     tex_col = pow(tex_col, gamma);

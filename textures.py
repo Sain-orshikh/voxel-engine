@@ -1,6 +1,8 @@
 import pygame as pg
 import moderngl as mgl
 
+from settings import resource_path
+
 class Textures:
     def __init__(self, app):
         self.app = app

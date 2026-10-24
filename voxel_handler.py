@@ -23,45 +23,30 @@ class VoxelHandler:
             result = self.get_voxel_id(self.voxel_world_pos + self.voxel_normal)
 
             #is the new place empty?
-            if not result[0]:
+            if not result[0] and result[3]:
                 _, voxel_index, _, chunk = result
                 chunk.voxels[voxel_index] = self.new_voxel_id
-                chunk.mesh.rebuild()
+                self.rebuild_affected_chunks(self.voxel_world_pos + self.voxel_normal)
 
-                #empty chunk?
-                if chunk.is_empty:
-                    chunk.is_empty = False
-
-    def rebuild_adj_chunk(self, adj_voxel_pos):
-        index = get_chunk_index(adj_voxel_pos)
-        if index != -1:
-            self.chunks[index].mesh.rebuild()
-
-    def rebuild_adjacent_chunks(self):
-        lx, ly, lz = self.voxel_local_pos
-        wx, wy, wz = self.voxel_world_pos
-
-        if lx == 0:
-            self.rebuild_adj_chunk((wx-1, wy, wz))
-        elif lx == CHUNK_SIZE - 1:
-            self.rebuild_adj_chunk((wx+1, wy, wz))
-
-        if ly == 0:
-            self.rebuild_adj_chunk((wx, wy-1, wz))
-        elif ly == CHUNK_SIZE - 1:
-            self.rebuild_adj_chunk((wx, wy+1, wz))
-
-        if lz == 0:
-            self.rebuild_adj_chunk((wx, wy, wz-1))
-        elif lz == CHUNK_SIZE - 1:
-            self.rebuild_adj_chunk((wx, wy, wz+1)) 
+    def rebuild_affected_chunks(self, world_pos):
+        """Refresh visibility and AO consumers, including edge/corner neighbors."""
+        wx, wy, wz = map(int, world_pos)
+        affected = set()
+        for dy in (-1, 0, 1):
+            for dz in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    index = get_chunk_index((wx + dx, wy + dy, wz + dz))
+                    if index != -1:
+                        affected.add(index)
+        for index in sorted(affected):
+            chunk = self.chunks[index]
+            chunk.is_empty = not np.any(chunk.voxels)
+            chunk.mesh.rebuild()
 
     def remove_voxel(self):
         if self.voxel_id:
             self.chunk.voxels[self.voxel_index] = 0
-
-            self.chunk.mesh.rebuild()
-            self.rebuild_adjacent_chunks()
+            self.rebuild_affected_chunks(self.voxel_world_pos)
 
     def set_voxel(self):
         if self.interaction_mode:
@@ -134,16 +119,12 @@ class VoxelHandler:
         return False
 
     def get_voxel_id(self, voxel_world_pos):
-        cx, cy, cz = chunk_pos = voxel_world_pos / CHUNK_SIZE
-
-        if 0 <= cx < WORLD_W and 0 <= cy < WORLD_H and 0 <= cz < WORLD_D:
-            chunk_index = cx + WORLD_W * cz + WORLD_AREA * cy
-            chunk = self.chunks[chunk_index]
-
-            lx, ly, lz = voxel_local_pos = voxel_world_pos - chunk_pos * CHUNK_SIZE
-
-            voxel_index = lx + CHUNK_SIZE * lz + CHUNK_AREA * ly
-            voxel_id = chunk.voxels[voxel_index]
-
-            return voxel_id, voxel_index, voxel_local_pos, chunk
-        return 0, 0, 0, 0
+        wx, wy, wz = map(int, voxel_world_pos)
+        chunk_index = get_chunk_index((wx, wy, wz))
+        if chunk_index == -1:
+            return 0, 0, 0, 0
+        chunk = self.chunks[chunk_index]
+        local_pos = glm.ivec3(wx % CHUNK_SIZE, wy % CHUNK_SIZE, wz % CHUNK_SIZE)
+        lx, ly, lz = local_pos
+        voxel_index = lx + CHUNK_SIZE * lz + CHUNK_AREA * ly
+        return chunk.voxels[voxel_index], voxel_index, local_pos, chunk
