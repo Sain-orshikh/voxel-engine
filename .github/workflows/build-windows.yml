@@ -2,6 +2,11 @@ name: Build Windows game
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Installer version (for example, 0.1.0)'
+        required: true
+        default: '0.1.0'
   push:
     tags:
       - 'v*'
@@ -18,6 +23,23 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          architecture: 'x64'
+
+      - name: Set installer version
+        shell: pwsh
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $env:GITHUB_REF_NAME -replace '^v', ''
+          } else {
+            $env:INPUT_VERSION
+          }
+          if ($version -notmatch '^\d{1,5}\.\d{1,5}\.\d{1,5}(\.\d{1,5})?$' -or
+              @($version.Split('.') | Where-Object { [int]$_ -gt 65535 }).Count -gt 0) {
+            throw 'Use a numeric version such as 0.1.0 (tag v0.1.0), with components <= 65535.'
+          }
+          "APP_VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Install dependencies
         run: python -m pip install -r requirements.txt pyinstaller
@@ -26,14 +48,54 @@ jobs:
         run: >-
           pyinstaller --clean --noconfirm --onedir --windowed
           --name VoxelEngine
-          --add-data "assets;assets"
-          --add-data "shaders;shaders"
+          --add-data "assets:assets"
+          --add-data "shaders:shaders"
           main.py
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $compiler)) {
+            throw 'Inno Setup 6 is missing from the Windows runner.'
+          }
+          & $compiler "/DAppVersion=$env:APP_VERSION" installer/windows.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
+
+      - name: Check installation and uninstallation
+        shell: pwsh
+        run: |
+          $installer = (Resolve-Path "dist/installer/VoxelEngineSetup-$env:APP_VERSION-windows-x64.exe").Path
+          $destination = Join-Path $env:RUNNER_TEMP 'Voxel Engine installer check'
+          $process = Start-Process -FilePath $installer -ArgumentList @(
+            '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-',
+            "/DIR=`"$destination`""
+          ) -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Install failed: $($process.ExitCode)" }
+          foreach ($relative in @('VoxelEngine.exe', '_internal/assets/tex_array_0.png', '_internal/shaders/chunk.vert', '_internal/shaders/chunk.frag')) {
+            if (!(Test-Path (Join-Path $destination $relative))) {
+              throw "Installed file missing: $relative"
+            }
+          }
+          $process = Start-Process -FilePath (Join-Path $destination 'unins000.exe') -ArgumentList @(
+            '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
+          ) -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Uninstall failed: $($process.ExitCode)" }
+          if (Test-Path (Join-Path $destination 'VoxelEngine.exe')) {
+            throw 'Uninstaller left the application executable behind.'
+          }
 
       - name: Create itch.io archive
         run: Compress-Archive -Path dist/VoxelEngine -DestinationPath dist/VoxelEngine-windows.zip
 
-      - name: Upload build artifact
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxelEngine-installer-windows
+          path: dist/installer/VoxelEngineSetup-*-windows-x64.exe
+          if-no-files-found: error
+
+      - name: Upload portable archive
         uses: actions/upload-artifact@v4
         with:
           name: VoxelEngine-windows

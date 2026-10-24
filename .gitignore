@@ -3,3 +3,7 @@
 *.nbc
 *.nbi
 /benchmarks
+/build/
+/dist/
+/VoxelEngine.spec
+*.yml
